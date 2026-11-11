@@ -1,18 +1,19 @@
-# Upstage MCP 도구 매핑
+# Upstage MCP 법인회계 우선 도구 맵
 
-확인 시점: 2026-11-11, 원본 버전 0.31.0. 실제 등록된 도구 스키마를 재확인한다.
+확인: UpstageAI/korean-tax-calc-mcp 0.31.0 (2026-11-11). 실제 연결된 도구 목록과 현재 세법을 재검증한다.
 
-| 연구비 지급 업무 | MCP 도구 | 주요 입력 | 제한 |
+| 우선순위 | 업무 | 후보 도구 | 필수 법적·입력 전제 |
 |---|---|---|---|
-| 도구 검색 | find_tool | query | 후보일 뿐 적용 판단 아님 |
-| 거주자 원천징수 | withholding_tax | kind, amount, year | 소득세분만 계산. 기타소득은 필요경비·과세최저한 확인 후 과세대상 금액 입력 |
-| 비거주자 지급 | nonresident_withholding | income_kind, amount, recipient_type, residence_country, treaty_rate?, service_location? | 조세조약·거주자성 별도 확인 |
-| 근로소득 연간 참고 | wage_income_tax | gross_pay, year, tax_base? | 월별 간이세액표 아님 |
-| 일용근로 | daily_worker_withholding | daily_wage, year | 일용근로자 해당 여부 판단 선행 |
-| 부가세 매입 공제 | vat_input_tax_deduction | period, filing, items | 과세·면세 여부 선행 |
-| 공통매입세액 | vat_common_input_allocation | common_tax, total_supply, exempt_supply | 실제 공급액 필요 |
-| 엑셀 검토용 | export_workbook | title, calls, output_dir?, layout? | 비식별 데이터만 사용 |
+| 핵심 | 비영리 고유목적사업준비금 | nonprofit_reserve_limit | 특례 적용자격과 실제 **사업연도 종료일**; year <= 2028 방식의 upstream 일몰 판정 신뢰 금지 |
+| 핵심 | 법인세 | corporate_tax, income_adjustment_total | 수익사업·비수익사업 구분경리, 익금·손금 및 공제 확인 |
+| 핵심 | 기부금 | donation_limit | 받은 기부금과 지급 기부금 구별, 적격 지출 판단 |
+| 핵심 | 감가상각·보조금 | depreciation_adjustment, asset_grant_reserve | 자산·수익 인식, 법인세 적용 판단 선행 |
+| 핵심 | 매입세액 | vat_input_tax_deduction, vat_common_input_allocation, common_input_tax | 과세·면세 거래와 공통매입액 분리 |
+| 핵심 | 부가세 신고·해외 용역 | vat_return_general, vat_reverse_charge, vat_supply_timing | 신고 법인·거래시기·역외 공급 검증 |
+| 보조 | 국내 지급 원천세 | withholding_tax, wage_income_tax, daily_worker_withholding | 소득 종류 판별; 기타소득은 필요경비·과세최저한 먼저 검토 |
+| 보조 | 비거주자 지급 | nonresident_withholding | 국내원천·거주자성·조세조약 근거 검증 |
+| 공통 | 도구 확인·검토 엑셀 | find_tool, export_workbook | 비식별 자료만; 서식은 자동 신고서가 아님 |
 
-원본: https://github.com/UpstageAI/korean-tax-calc-mcp/blob/main/korean_tax_calc_mcp/server.py
+법인세·부가세 도구가 일반 기업 상황을 전제할 수 있으므로 대학법인의 구분경리·특례를 먼저 판단한다. nonprofit_reserve_limit 는 연도 정수로만 일몰을 판단하므로 scripts/periods.py 및 최신 공식 법령 검증이 필수다.
 
-주의: 200,000원 일회 강연료 사례에서 기타소득금액 80,000원이 확인된 경우 원본 withholding_tax의 amount에는 200000이 아니라 80000을 넣어야 한다.
+원본: https://github.com/UpstageAI/korean-tax-calc-mcp
