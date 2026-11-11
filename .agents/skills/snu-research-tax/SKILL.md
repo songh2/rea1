@@ -1,50 +1,60 @@
 ---
 name: snu-research-tax
-description: 국립대학법인 서울대학교와 산학협력단의 연구비 지급·정산에서 전문가활용비, 강사료, 자문료, 원고료, 단기 인건비, 외국인 전문가 지급, 원천징수, 지방소득세, 부가가치세 증빙을 검토하고 계산 근거·실지급액 검산표를 작성한다. UpstageAI korean-tax-calc-mcp 계산 도구와 공식 세법·기관 규정을 연결하되 소득 분류와 지급주체, 조세조약, 연구비 집행 적격성의 선검토가 필요한 경우 사용한다. 개인정보 외부 비전송과 자동 집행 금지가 필수다.
+description: "Review National University Corporation Seoul National University (SNU) corporate-account tax and nonprofit accounting first: taxable versus non-taxable activities, corporate income tax, business versus nonprofit books, reserve for designated purposes, donations, VAT, withholding, closing and filings. Also supports SNU research-administration tax as a secondary area. Use for questions about SNU corporation accounting, VAT invoices, revenue classification, tax adjustment, year-end close, business units and tax calendars."
 ---
 
-# 서울대학교 연구비 세무 검토
+# SNU corporate accounting and tax review
 
-이 스킬은 연구비 지급 세무 검토 보조 지침이다. 국세청 신고, 지급, 결재, SRnD 입력을 자동으로 실행하지 않는다. 원본 Upstage MCP 계산기를 변경하지 않고 연구행정 검토 단계를 추가한다.
+**Primary focus: the corporate accounts of National University Corporation Seoul National University.** Research administration is secondary. Answer users in Korean. This is a source-checked decision-support Skill, not an accountant, tax agent, official SNU rulebook, filing system, or substitute for an authorized approver. Never modify original Upstage code or directly file, pay, post or approve entries.
 
-## 1. 필요한 입력 확인
+## 1. Mandatory routing
 
-기존 대화에서 확인된 정보는 재질문하지 않는다. 지급주체(국립대학법인 서울대학교/산학협력단/기타), 계약·지급·원천징수 주체 일치 여부, 지급목적과 연구비 비목, 지급일·귀속연도, 총지급액인지 실수령액인지, 수취인이 개인/법인인지, 고용관계·독립성·계속반복성·거주자성·용역 수행 장소, 증빙의 종류를 확인한다.
+1. Determine the **legal entity** responsible for the transaction: SNU university corporation, SNU Industry-Academic Cooperation Foundation, university development fund, another affiliate, or unknown. Never treat them as the same taxpayer because their names contain SNU. Establish separate taxpayer registration, book and filing unit using evidence, not inference.
+2. Establish transaction date, underlying business period, monetary unit and evidence. Distinguish statutory SNU accounting year (**Mar 1 to end of following February**; SNU establishment act Art. 19), the verified corporate-tax business-year registration and the VAT half-year filing period. They are not interchangeable. See references/entity-periods.md.
+3. Separate **accounting recognition**, **corporate-tax characterization**, **VAT treatment**, **withholding**, and **SNU internal authority**. Never infer legal tax exemption from public-university or non-profit status alone.
+4. Route to the pertinent reference before calculating:
+   - Business income, nonprofit purpose, tax adjustments, deductible versus non-deductible costs: references/corporate-tax.md.
+   - Reserve under Corporate Tax Act Art. 29 and special treatment under Restriction of Special Taxation Act Art. 74: references/reserve-and-donations.md.
+   - VAT on tuition, training, commissions, real-estate leases, licensing, mixed-use purchases, imports and overseas services: references/vat.md.
+   - Payroll, honoraria and research costs: references/decision-matrix.md.
+   - Authoritative evidence and security: references/authority-check.md.
+5. Use the connected UpstageAI korean-tax-calc-mcp tools only after verifying the actual schema, supported period and legal applicability; use find_tool if uncertain. See references/tool-map.md. Tool output cannot itself establish legal characterization or the current law.
 
-원본 개인 식별정보(주민등록번호·외국인등록번호·여권번호·계좌번호·실명·연락처)와 계약서 전문을 외부 서비스, 공개 GitHub 또는 MCP 호출에 제공하지 않는다. 데이터는 최소 범위로 비식별화한다. 연구비 비목 자체로 소득세상 종류가 확정되지 않는다.
+## 2. Special nonprofit reserve risk (required)
 
-## 2. 판정 순서
+NTS guidance lists SNU among the entities addressed by Restriction of Special Taxation Act Art. 74; the published special 100% reserve treatment concerns **business years ending on or before 2028-12-31**, subject to law and deduction requirements at the relevant date. Verify current enacted law and transitional clauses every time. Do not transform the special deduction ceiling into automatic full tax exemption. Track booked amount, qualified income, reserve use, unused balance and recapture. Never assume 100% is an allowable booked amount or that any income is automatically taxable.
 
-1. 실제 지급·원천징수 의무 주체를 확인한다. 서울대학교와 산학협력단을 같은 사업자로 전제하지 않는다.
-2. 고용관계가 있으면 근로소득 가능성, 고용관계 없는 계속·반복 용역이면 사업소득 가능성, 일시적 독립 인적용역이면 기타소득 가능성을 분리 검토한다. 이름만 보고 3.3% 또는 8.8%를 적용하지 않는다.
-3. 거주자/비거주자는 국적만으로 결정하지 않는다. 국내원천소득, 조세조약과 관련 서류, 용역 수행 장소를 확인한다.
-4. 연구비 집행 적격성은 세액 계산과 별도로 협약·국가연구개발 기준·기관 최신 내부 규정을 확인한다. 최신 규정이 확보되지 않으면 기관 확인 필요로 남긴다.
-5. 개인정보가 비식별화되지 않았거나 분류에 필요한 핵심 정보가 누락되었으면 확정 세액과 실지급액을 제시하지 않는다.
+**Important upstream implementation risk:** the upstream nonprofit_reserve_limit calculator was observed to gate its special rate on year <= 2028 rather than on the business-year **ending date**. For SNU's hypothetical 2028-03-01 to 2029-02-28 year, a naive input of year=2028 could misclassify the sunset. Run scripts/periods.py and explicitly assess the ending date before calling this tool. If any clash arises, flag 'manual review required'; do not silently patch or trust the numeric output.
 
-상세 결정표는 references/decision-matrix.md, 근거와 보안은 references/authority-check.md를 읽는다.
+## 3. Computation and safety
 
-## 3. 계산 도구
+- Inputs can be fictional or pseudonymized transaction attributes only; never send personal identifiers, bank details, real taxpayer IDs, contracts, faculty payroll, internal ledgers or third-party confidential information to external MCP/PDF services. Upstage PDF tools with an API key may transmit document content. Use local redaction and minimal data extraction.
+- Do not connect to tax accounts or trigger filing, payment, journal posting or dispatch. Never expose official verdicts without current citations to articles, official guidance, effective dates and SNU institution rules where applicable.
+- Missing entity, taxable-activity classification, reporting period, contract evidence, special reserve conditions or applicable law -> return **REVIEW REQUIRED** with missing facts instead of an unqualified tax figure.
+- Preserve known zero as 0, unknown as unconfirmed and not-applicable as N/A. Show the calculation tool/version, assumptions and rounding. The scripts/reconcile.py helper checks arithmetic only, not tax applicability.
 
-- 연결된 korean-tax-calc-mcp 서버의 find_tool로 실제 도구를 확인한 뒤 references/tool-map.md의 입력 시그니처에 맞게 사용한다. 서버가 연결되지 않았다면 있는 척하지 말고 references/setup.md를 안내한다.
-- 원본 withholding_tax(kind='기타', amount=...)는 **기타소득 과세대상 금액에 대한 소득세분** 계산이다. 일시적 강연·자문료 지급총액을 그대로 넣으면 필요경비 60%와 건별 과세최저한을 반영하지 못한다. 자격·연도·비용 인정 범위를 먼저 검증한다.
-- 원본 원천징수 결과는 지방소득세를 별도로 확인한다. 근로소득 연간 계산을 월별 간이세액표의 대체재로 쓰지 않는다.
-- 외국인 지급에는 비거주자 여부와 조약 적용을 검증한 경우에만 nonresident_withholding 결과를 참고한다.
-- VAT 도구 결과보다 기관·사업의 과세/면세 및 매입세액 공제 요건 판단을 먼저 한다.
-- 확인 기준(2026-11-11) 업스트림 0.31.0은 소득세·법인세 2016~2026, 부가세 2016~2026을 지원한다고 명시한다. 미지원 연도는 추정하지 않는다.
-- scripts/reconcile.py는 법령·MCP로 **이미 확정된** 국세·지방세 금액을 이용해 총원천징수액과 실지급액만 산술 검산한다. 세율 계산 도구가 아니다.
+## 4. Required output (in Korean)
 
-## 4. 답변 형식
+1. **Conclusion/status**: review required, conditional computation or checked computation (never claim official approval).
+2. **Entity and periods**: entity/registration verified or not, SNU fiscal year, corporate-tax business year, VAT period, transaction date.
+3. **Five-lens table**: accounting treatment; corporate tax; VAT; withholding; school/internal regulation. Mark each confirmed, conditional or unknown separately.
+4. **Calculation and reconciliation**, only if justified: source facts, formulas, national/local tax, book-to-tax adjustments, evidence and filing/adjustment calendar.
+5. **Authority trail**: governing provision, actual amendment/effective date, official URL, original tool name/version and unresolved conflicts.
+6. **Next action**: supporting documents, accountant/corporate accounting team review and specific unresolved question. Keep final decision with responsible institution.
 
-'검토대기 / 조건부 산출 / 확인 후 산출' 중 판정을 먼저 제시한다. 이어 지급주체·지급사유·소득구분(확정/가정)·거주자성·일자·금액을 표시한다. 세금 계산표에 총지급액, 필요경비, 과세대상 금액, 국세, 지방소득세, 합계, 실지급액을 표시하되 미확인과 0원을 구별한다. 근거 조문·시행일·국세청 URL·기관 규정명/버전·도구 버전을 명시한다. 마지막에 추가 증빙과 담당 부서 확인 사항을 남긴다.
+## 5. Resources and validation
 
-법령·기관 규정과 계산 도구가 상충하면 확정 결과를 보류하고 쟁점 및 상충 근거를 보고한다. 세무 자문이나 기관 공식 지침으로 표시하지 않는다.
+- references/entity-periods.md: taxpayer separation and three calendars.
+- references/corporate-tax.md: nonprofit income and book/tax reconciliations.
+- references/reserve-and-donations.md: 100% sunset, 5-year use and evidence.
+- references/vat.md: mixed taxable/exempt VAT and import/overseas services.
+- references/tool-map.md: upstream tools and cautions.
+- references/decision-matrix.md: research and honoraria secondary branch.
+- references/example-cases.md: reference test cases.
+- references/setup.md: optional MCP registration on macOS.
+- scripts/periods.py: deterministic SNU fiscal-year and sunset-date precheck.
+- scripts/reconcile.py: arithmetic verification after tax amounts are independently validated.
 
-## 5. 연결·검증
+Execute python3 -m unittest discover -s scripts -p 'test_*.py' -v in the Skill root. These local tests do NOT constitute legal or integration verification against the current Upstage MCP.
 
-references/setup.md에는 macOS Codex MCP 연결 예시, references/example-cases.md에는 가상 테스트 사례가 있다. 스킬 루트에서 python3 -m unittest discover -s scripts -p 'test_*.py' -v를 실행해 검산 테스트를 확인한다.
-
-## 출처와 한계
-
-- MIT 라이선스 업스트림: https://github.com/UpstageAI/korean-tax-calc-mcp (Copyright 2026 Upstage, 원본 코드 복제 없음)
-- 국립대학법인 서울대학교 설립ㆍ운영에 관한 법률: https://law.go.kr/LSW/lsInfoP.do?lsId=011316
-- 본 스킬은 서울대학교·산학협력단의 공식 인증 계산기가 아니며 내부 규정 전문을 내장하지 않는다.
+Upstream license/source: https://github.com/UpstageAI/korean-tax-calc-mcp (MIT, copyright Upstage 2026); no upstream calculator code bundled. SNU law: https://www.law.go.kr/LSW/lsInfoP.do?lsId=011316 . NTS nonprofit guidance: https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7983&mi=6557 . This Skill is not officially endorsed by SNU.
