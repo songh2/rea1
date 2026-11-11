@@ -1,0 +1,3 @@
+interface:
+  display_name: "서울대 연구비 세무 검토"
+  short_description: "연구비 지급 세금 계산 전 분류·규정 확인과 검산"
